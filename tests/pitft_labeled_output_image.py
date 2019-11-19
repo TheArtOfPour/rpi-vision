@@ -88,24 +88,18 @@ def main(args):
             "%s inference took %d ms, %0.1f FPS" % ("TFLite" if args.tflite else "TF", delta * 1000, 1 / delta))
         print(last_seen)
 
-        # add FPS on top corner of image
-        fpstext = "%0.1f FPS" % (1 / delta,)
-        fpstext_surface = smallfont.render(fpstext, True, (255, 0, 0))
-        fpstext_position = (screen.get_width() - 10, 10)  # near the top right corner
-        screen.blit(fpstext_surface, fpstext_surface.get_rect(topright=fpstext_position))
-
         for p in prediction:
             label, name, conf = p
             if conf > CONFIDENCE_THRESHOLD:
                 print("Detected", name)
 
-                persistant_obj = False  # assume the object is not persistant
+                persistent_obj = False  # assume the object is not persistent
                 last_seen.append(name)
                 last_seen.pop(0)
 
                 inferred_times = last_seen.count(name)
                 if inferred_times / len(last_seen) > PERSISTENCE_THRESHOLD:  # over quarter time
-                    persistant_obj = True
+                    persistent_obj = True
 
                 detecttext = name.replace("_", " ")
                 detecttextfont = None
@@ -116,13 +110,13 @@ def main(args):
                         break
                 else:
                     detecttextfont = smallfont  # well, we'll do our best
-                detecttext_color = (0, 255, 0) if persistant_obj else (255, 255, 255)
+                detecttext_color = (0, 255, 0) if persistent_obj else (255, 255, 255)
                 detecttext_surface = detecttextfont.render(detecttext, True, detecttext_color)
                 detecttext_position = (screen.get_width() // 2,
                                        screen.get_height() - detecttextfont.size(detecttext)[1])
                 screen.blit(detecttext_surface, detecttext_surface.get_rect(center=detecttext_position))
 
-                if persistant_obj and last_spoken != detecttext:
+                if persistent_obj and last_spoken != detecttext:
                     os.system('echo %s | festival --tts & ' % detecttext)
                     last_spoken = detecttext
                 break
